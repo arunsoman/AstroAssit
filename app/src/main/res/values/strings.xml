@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">AstroAssist</string>
+    <string name="permission_denied_explanation">Permission denied</string>
+    <string name="settings">Settings</string>
+    <string name="permission_rationale">Permission rationale</string>
+    <string name="no_location_detected">No location detected</string>
+
+    <string name="GPS_label">From Gps</string>
+    <string name="longitude_label">Longitude: %f</string>
+    <string name="latitude_label">Latitude: %f</string>
+    <string name="altitude_label">Altitude: %f</string>
+    <string name="MagInc_label">Magnetic inclination: %f</string>
+    <string name="az_len_label">Az: %s (M)</string>
+    <string name="az_translate_label">Az translate %s (Inch)</string>
+
+    <string name="ele_len_label">Elevation: %s (M)</string>
+    <string name="Ele_translate_label">Elevation translate %s (Inch)</string>
+
+    <string name="Calculate">Calculate</string>
+    <string name="Refresh">Refresh</string>
+</resources>

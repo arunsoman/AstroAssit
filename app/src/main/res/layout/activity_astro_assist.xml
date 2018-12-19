@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".AstroAssist" tools:ignore="LabelFor" >
+
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <TextView
+                    android:text="From GPS"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/GPS" tools:text="@string/GPS_label"
+                    android:gravity="center_horizontal"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:text="@string/latitude_label"
+                    android:ems="10"
+                    android:id="@+id/latitude_text" android:importantForAutofill="no"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:text="@string/longitude_label"
+                    android:ems="10"
+                    android:id="@+id/longitude_text" android:importantForAutofill="no"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:text="@string/altitude_label"
+                    android:ems="10"
+                    android:id="@+id/alt_text" android:importantForAutofill="no"/>
+        </LinearLayout>
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <TextView
+                    android:text="Mangnetic Inclination"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/Magnetic_inclination"
+                    android:gravity="center_horizontal" />
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:text="@string/MagInc_label"
+                    android:ems="10"
+                    android:id="@+id/MagInc_label" android:importantForAutofill="no"/>
+        </LinearLayout>
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+            <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Azimuth"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:id="@+id/az"
+                        android:gravity="center_horizontal"/>
+                <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:text="@string/az_len_label"
+                        android:ems="10"
+                        android:id="@+id/az_len_label" android:importantForAutofill="no"/>
+                <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:text="@string/az_translate_label"
+                        android:ems="10"
+                        android:id="@+id/az_translate_label" android:importantForAutofill="no"/>
+            </LinearLayout>
+            <Space
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_weight="1"/>
+            <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Elevation"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:gravity="center_horizontal"/>
+                <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:text="@string/ele_len_label"
+                        android:ems="10"
+                        android:id="@+id/ele_len_label" android:importantForAutofill="no"/>
+                <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName"
+                        android:text="@string/Ele_translate_label"
+                        android:ems="10"
+                        android:id="@+id/ele_translate_label" android:importantForAutofill="no"/>
+            </LinearLayout>
+        </LinearLayout>
+        <Space
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+            <Button
+                    android:text="@string/Calculate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/Calculate" android:layout_weight="1"/>
+            <Button
+                    android:text="@string/Refresh"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:id="@+id/Refresh" android:layout_weight="1"/>
+        </LinearLayout>
+    </LinearLayout>
+</android.support.constraint.ConstraintLayout>
