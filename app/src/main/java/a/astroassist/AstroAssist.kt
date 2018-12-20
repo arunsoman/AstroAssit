@@ -25,7 +25,6 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import kotlinx.android.synthetic.main.activity_astro_assist.*
 import kotlin.math.tan
 
 
@@ -38,12 +37,12 @@ class AstroAssist : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var latitudeText: TextView
     private lateinit var longitudeText: TextView
-    private lateinit var alt: TextView
+    private lateinit var altText: TextView
     private lateinit var magInclination: TextView
 
-    private  lateinit var lngStr: String
-    private  lateinit var latStr: String
-    private  lateinit var altStr: String
+    private var lng= 0.0
+    private var lat= 0.0
+    private var alt= 0.0
 
     private lateinit var azText: TextView
     private lateinit var az_transText: TextView
@@ -61,17 +60,17 @@ class AstroAssist : AppCompatActivity() {
         setContentView(R.layout.activity_astro_assist)
         latitudeText = findViewById(R.id.latitude_text)
         longitudeText = findViewById(R.id.longitude_text)
-        alt = findViewById(R.id.alt_text)
+        altText = findViewById(R.id.alt_text)
 
         magInclination = findViewById(R.id.MagInc_label)
 
         azText= findViewById(R.id.az_len_label)
         az_transText = findViewById(R.id.az_translate_label)
-        azText.text = "5"
+        azText.text = 1.0.toString()
 
         eleText= findViewById(R.id.ele_len_label)
         ele_transText = findViewById(R.id.ele_translate_label)
-        eleText.text = "1"
+        eleText.text = 5.0.toString()
 
         calcButton = findViewById(R.id.Calculate)
         refreshButton = findViewById(R.id.Refresh)
@@ -85,6 +84,7 @@ class AstroAssist : AppCompatActivity() {
             getLastLocation()
         }
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
     }
 
     override fun onStart() {
@@ -102,15 +102,16 @@ class AstroAssist : AppCompatActivity() {
         fusedLocationClient.lastLocation
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful && task.result != null) {
-                    latitudeText.text = resources
-                        .getString(R.string.latitude_label, task.result.latitude)
+                    latitudeText.text = String.format(resources
+                        .getString(R.string.latitude_label), task.result.latitude)
                     longitudeText.text = resources
                         .getString(R.string.longitude_label, task.result.longitude)
-                    alt.text = resources
+                    altText.text = resources
                         .getString(R.string.altitude_label, task.result.altitude)
-                    lngStr = task.result.longitude.toString()
-                    latStr = task.result.latitude.toString()
-                    altStr = (task.result.altitude/1000).toString()
+                    print("altitude: $task.result.altitude")
+                    lng = task.result.longitude
+                    lat = task.result.latitude
+                    alt = (task.result.altitude/1000)
                     getMagneticInclination()
                 } else {
                     Log.w(TAG, "getLastLocation:exception", task.exception)
@@ -119,13 +120,6 @@ class AstroAssist : AppCompatActivity() {
             }
     }
 
-    /**
-     * Shows a [Snackbar].
-     *
-     * @param snackStrId The id for the string resource for the Snackbar text.
-     * @param actionStrId The text of the action item.
-     * @param listener The listener associated with the Snackbar action.
-     */
     private fun showSnackbar(
         snackStrId: Int,
         actionStrId: Int = 0,
@@ -139,9 +133,6 @@ class AstroAssist : AppCompatActivity() {
         snackbar.show()
     }
 
-    /**
-     * Return the current state of the permissions needed.
-     */
     private fun checkPermissions() =
         ActivityCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) == PERMISSION_GRANTED
 
@@ -154,19 +145,14 @@ class AstroAssist : AppCompatActivity() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, ACCESS_FINE_LOCATION)) {
             Log.i(TAG, "Displaying permission rationale to provide additional context.")
             showSnackbar(R.string.permission_rationale, android.R.string.ok, View.OnClickListener {
-                  // Request permission
                 startLocationPermissionRequest()
             })
-
         } else {
             Log.i(TAG, "Requesting permission")
             startLocationPermissionRequest()
         }
     }
 
-    /**
-     * Callback received when a permissions request has been completed.
-     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -175,16 +161,11 @@ class AstroAssist : AppCompatActivity() {
         Log.i(TAG, "onRequestPermissionResult")
         if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
             when {
-                // If user interaction was interrupted, the permission request is cancelled and you
-                // receive empty arrays.
                 grantResults.isEmpty() -> Log.i(TAG, "User interaction was cancelled.")
-
-                // Permission granted.
                 (grantResults[0] == PackageManager.PERMISSION_GRANTED) -> getLastLocation()
             else -> {
                     showSnackbar(R.string.permission_denied_explanation, R.string.settings,
                         View.OnClickListener {
-                            // Build intent that displays the App settings screen.
                             val intent = Intent().apply {
                                 action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                                 data = Uri.fromParts("package", APPLICATION_ID, null)
@@ -197,37 +178,24 @@ class AstroAssist : AppCompatActivity() {
         }
     }
 
-    fun getMagneticInclination(){
+    private fun getMagneticInclination(){
 
         val c = Calendar.getInstance().getTime()
         val df = SimpleDateFormat("yyyy-MM-dd")
         val formattedDate = df.format(c)
 
         val queue = Volley.newRequestQueue(this)
-        val url = "http://geomag.bgs.ac.uk/web_service/GMModels/wmm/2015v2/?latitude="+latStr+
-                "&longitude="+lngStr +
-                "&altitude="+altStr+
-                "&date="+formattedDate+
-                "&format=json"
+        val url = "http://geomag.bgs.ac.uk/web_service/GMModels/wmm/2015v2/?latitude=$lat"+
+                "&longitude=$lng&altitude=$alt&date=$formattedDate+&format=json"
 // Request a string response from the provided URL.
         val stringRequest = StringRequest(
             Request.Method.GET, url,
             Response.Listener<String> { response ->
-                var temp = response.split("\"inclination\": {")[1]
-                    .split('}')[0]
-                    .split(":")
+                val temp = response.split("\"declination\": {")[1]
+                    .split('}')[0].split(":")
 
-                println("Response => $temp")
-                var dir = temp[1].contains("down")
-                var value = temp[2].toDouble()
-
-                if(dir){
-                    magInc = value*-1
-                }
-                else{
-                    magInc = value
-                }
-
+                val value = temp[2].toDouble()
+                magInc = if(temp[1].contains("down")){ value*-1 } else{ value }
                 magInclination.text = magInc.toString()
                 computeAZ()
                 computeEle()
@@ -242,22 +210,21 @@ class AstroAssist : AppCompatActivity() {
     }
 
     private fun computeAZ(){
-        var value = magInc
-        if(value < 0)
-            value *=-1
-
-        var delta = tan(value)*(az_len_label.text.toString().toDouble())/39.3701 //inch
-        if(value < 0){
-            az_transText.text = "West:$delta"
-        }
-        else{
-            az_transText.text = "East:$delta"
-        }
+        az_transText.text = resources.getString(R.string.az_translate_label).
+            format(if(magInc < 0){ "W "} else{"E "},
+                getOppositSideInInch(Math.abs(magInc),
+                    azText.text.toString().toDouble()
+                    ))
     }
 
     private fun computeEle(){
-        var delta = tan(latStr.toDouble())*(eleText.text.toString().toDouble())
-        ele_transText.text = delta.toString()
+        ele_transText.text =resources
+            .getString(R.string.Ele_translate_label, getOppositSideInInch(lat,
+                eleText.text.toString().toDouble()
+                ))
+    }
 
+    private  fun  getOppositSideInInch(angle: Double, adjacent: Double):Double{
+        return tan(angle)*adjacent/39.3701
     }
 }

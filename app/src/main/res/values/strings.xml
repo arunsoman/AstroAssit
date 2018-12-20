@@ -6,15 +6,17 @@
     <string name="no_location_detected">No location detected</string>
 
     <string name="GPS_label">From Gps</string>
-    <string name="longitude_label">Longitude: %f</string>
-    <string name="latitude_label">Latitude: %f</string>
-    <string name="altitude_label">Altitude: %f</string>
-    <string name="MagInc_label">Magnetic inclination: %f</string>
-    <string name="az_len_label">Az: %s (M)</string>
-    <string name="az_translate_label">Az translate %s (Inch)</string>
+    <string name="longitude_label">Long: %.3f</string>
+    <string name="latitude_label">Lat: %.3f</string>
+    <string name="altitude_label">Alt: %.3f</string>
 
-    <string name="ele_len_label">Elevation: %s (M)</string>
-    <string name="Ele_translate_label">Elevation translate %s (Inch)</string>
+    <string name="MagInc_label">Magnetic inclination: %.2f</string>
+
+    <string name="az_len_label">Az: %.3f (M)</string>
+    <string name="az_translate_label">%s: %.2f (Inch)</string>
+
+    <string name="ele_len_label">Elevation: %.3f (M)</string>
+    <string name="Ele_translate_label">Ele %.2f (Inch)</string>
 
     <string name="Calculate">Calculate</string>
     <string name="Refresh">Refresh</string>
