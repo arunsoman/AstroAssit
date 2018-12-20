@@ -3,11 +3,15 @@ package a.astroassist
 import a.astroassist.BuildConfig.APPLICATION_ID
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.icu.text.SimpleDateFormat
 import android.icu.util.Calendar
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -23,8 +27,6 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import kotlin.math.tan
 
 
@@ -32,28 +34,31 @@ class AstroAssist : AppCompatActivity() {
 
     private val TAG = "AstroAssist"
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 34
+    private val df = SimpleDateFormat("yyyy-MM-dd")
+    private lateinit var locationManager: LocationManager
+    private lateinit var locationListener: LocationListener
 
-
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var latitudeText: TextView
     private lateinit var longitudeText: TextView
     private lateinit var altText: TextView
+
     private lateinit var magInclination: TextView
+    private  var magInc= 0.0
 
     private var lng= 0.0
     private var lat= 0.0
-    private var alt= 0.0
 
+    private var alt= 0.0
     private lateinit var azText: TextView
     private lateinit var az_transText: TextView
     private lateinit var eleText: TextView
-    private lateinit var ele_transText: TextView
 
-    private  var magInc= 0.0
+    private lateinit var ele_transText: TextView
 
     private lateinit var calcButton: Button
     private lateinit var refreshButton: Button
-
+    private lateinit var location: Location
+    private var updated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,11 +71,11 @@ class AstroAssist : AppCompatActivity() {
 
         azText= findViewById(R.id.az_len_label)
         az_transText = findViewById(R.id.az_translate_label)
-        azText.text = 1.0.toString()
+        azText.text = .5.toString()
 
         eleText= findViewById(R.id.ele_len_label)
         ele_transText = findViewById(R.id.ele_translate_label)
-        eleText.text = 5.0.toString()
+        eleText.text = 1.toString()
 
         calcButton = findViewById(R.id.Calculate)
         refreshButton = findViewById(R.id.Refresh)
@@ -78,12 +83,14 @@ class AstroAssist : AppCompatActivity() {
         calcButton.setOnClickListener{
             computeAZ()
             computeEle()
+            Log.d("CalcClicked", "Done")
         }
 
         refreshButton.setOnClickListener{
-            getLastLocation()
+            setLocation(location)
+            Log.d("refreshClicked", "Done")
         }
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
     }
 
@@ -97,27 +104,57 @@ class AstroAssist : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("MissingPermission")
+    override fun onPause() {
+        super.onPause()
+        locationManager.removeUpdates(locationListener)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerLocationUpdates()
+    }
+
+    private fun setLocation(loc:Location){
+        latitudeText.text = String.format(resources
+            .getString(R.string.latitude_label), loc.latitude)
+        longitudeText.text = resources
+            .getString(R.string.longitude_label, loc.longitude)
+        altText.text = resources
+            .getString(R.string.altitude_label, loc.altitude)
+        lng = loc.longitude
+        lat = loc.latitude
+        alt = (loc.altitude/1000)
+    }
+
     private fun getLastLocation() {
-        fusedLocationClient.lastLocation
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful && task.result != null) {
-                    latitudeText.text = String.format(resources
-                        .getString(R.string.latitude_label), task.result.latitude)
-                    longitudeText.text = resources
-                        .getString(R.string.longitude_label, task.result.longitude)
-                    altText.text = resources
-                        .getString(R.string.altitude_label, task.result.altitude)
-                    print("altitude: $task.result.altitude")
-                    lng = task.result.longitude
-                    lat = task.result.latitude
-                    alt = (task.result.altitude/1000)
+        Log.d("Location", "API called")
+        locationListener = object : LocationListener {
+
+            override fun onLocationChanged(loc: Location) {
+                if(updated == false){
+                    setLocation(loc)
                     getMagneticInclination()
-                } else {
-                    Log.w(TAG, "getLastLocation:exception", task.exception)
-                    showSnackbar(R.string.no_location_detected)
+                    updated = true;
+                    Log.d("Location", "Display set")
                 }
+                location = loc;
             }
+
+            override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
+            }
+
+            override fun onProviderEnabled(provider: String) {
+            }
+
+            override fun onProviderDisabled(provider: String) {
+            }
+        }
+        registerLocationUpdates()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun registerLocationUpdates(){
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5.0f, locationListener)
     }
 
     private fun showSnackbar(
@@ -181,9 +218,7 @@ class AstroAssist : AppCompatActivity() {
     private fun getMagneticInclination(){
 
         val c = Calendar.getInstance().getTime()
-        val df = SimpleDateFormat("yyyy-MM-dd")
         val formattedDate = df.format(c)
-
         val queue = Volley.newRequestQueue(this)
         val url = "http://geomag.bgs.ac.uk/web_service/GMModels/wmm/2015v2/?latitude=$lat"+
                 "&longitude=$lng&altitude=$alt&date=$formattedDate+&format=json"
@@ -204,27 +239,33 @@ class AstroAssist : AppCompatActivity() {
                 println("Error => $error")
                     magInclination.text = "That didn't work!"
             })
-
-// Add the request to the RequestQueue.
         queue.add(stringRequest)
+        Log.d("MagenticDeclination", "Done")
     }
 
     private fun computeAZ(){
+        if(magInclination.text != magInc.toString()){
+            //TODo
+        }
         az_transText.text = resources.getString(R.string.az_translate_label).
             format(if(magInc < 0){ "W "} else{"E "},
-                getOppositSideInInch(Math.abs(magInc),
+                getOppositeSideInInch(Math.abs(magInc),
                     azText.text.toString().toDouble()
                     ))
+        Log.d("App", "computeAZ")
     }
 
     private fun computeEle(){
         ele_transText.text =resources
-            .getString(R.string.Ele_translate_label, getOppositSideInInch(lat,
+            .getString(R.string.Ele_translate_label, getOppositeSideInInch(lat,
                 eleText.text.toString().toDouble()
                 ))
+        Log.d("App", "computeEle")
     }
 
-    private  fun  getOppositSideInInch(angle: Double, adjacent: Double):Double{
-        return tan(angle)*adjacent/39.3701
+    private  fun  getOppositeSideInInch(angle: Double, adjacent: Double):Double{
+        val result = tan(angle)*adjacent*39.3701
+        Log.d("App", "getOppositeSideInInch($angle:ang, $adjacent:adjacent):$result")
+        return result
     }
 }
