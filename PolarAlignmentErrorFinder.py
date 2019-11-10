@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
     if opt.apikey is None:
         # try the environment
-        opt.apikey = os.environ.get('AN_API_KEY', "XXXXXXXXX")
+        opt.apikey = os.environ.get('AN_API_KEY', "XXXXXXXXXXXXX")
     if opt.apikey is None:
         parser.print_help()
         print()
@@ -343,7 +343,10 @@ if __name__ == '__main__':
 
     c1 = SkyCoord(ra=d1['ra']*u.degree, dec=d1['dec']*u.degree, frame='icrs')
     c2 = SkyCoord(ra=d2['ra']*u.degree, dec=d2['dec']*u.degree, frame='icrs')
+    diff = SkyCoord(ra=abs(raDiff)*u.degree, dec=abs(decDiff)*u.degree, frame='icrs').to_string('hmsdms').split()
+    raDiffFormat =  '-{}'.format(diff[0]) if ( raDiff < 0)  else '{}'.format(diff[0])
+    decDiffFormat =  '-{}'.format(diff[1]) if ( raDiff < 0)  else '{}'.format(diff[1])
     print("Summary")
     print('p1 coordinates {}'.format(c1.to_string('hmsdms')))
     print('p2 coordinates {}'.format(c2.to_string('hmsdms')))
-    print('Alignment Error: {}'.format( SkyCoord(ra=raDiff*u.degree, dec=decDiff*u.degree, frame='icrs').to_string('hmsdms') ) )
+    print('Alignment Error: ra:{} dec:{}'.format(raDiffFormat, decDiffFormat ) )
