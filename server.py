@@ -8,6 +8,7 @@ from matplotlib import image
 import numpy as np
 import matplotlib.pyplot as plt
 import os.path
+from pathlib import Path 
 import time
 import math
 import datetime
@@ -17,7 +18,6 @@ debug = True
 
 
 def image2Array(uri, rotAng):
-    THRESHOLD_VALUE = 100
     a = Image.open(uri)
     aBw = a.convert('L')
     if rotAng is not None:
@@ -49,7 +49,7 @@ def computeRotAng(aData, url2):
     p, (_, _) = aa.find_transform(aData, bData)
     rotate = p.rotation * 180.0 / np.pi
     if debug is True:
-        print("Rotation: {:.2f} deg".format(rotate))
+        print("File:{} Rotated:{:.2f} deg".format(Path(aData).name, rotate))
     return rotate
 
 
@@ -84,7 +84,7 @@ def formateAzDrift(img1, img2):
 
 
 def computeAzError(img1, img2, img3):
-    (timeL, drift, adjust, cx, cy) = computeAzDrift(img1, img2)
+    (_, _, adjust, _, _) = computeAzDrift(img1, img2)
     d1 = image2Array(img1, 90)
     d3 = image2Array(img3, 90)
     p, (_, _) = aa.find_transform(d1, d3)
@@ -104,10 +104,10 @@ def formateAzError(img1, img2, img3):
 def computeAlDrift(url1, url2, ra, starLocation):
     d1 = image2Array(url1, 0)
     d2 = image2Array(url2, 0)
-    p, (pos_img, pos_img_rot) = aa.find_transform(d1, d2)
+    p, (_, _) = aa.find_transform(d1, d2)
     rotate = p.rotation * 180.0 / np.pi
-    d2 = image2Array(img2, rotate)
-    p, (pos_img, pos_img_rot) = aa.find_transform(d1, d2)
+    d2 = image2Array(url2, rotate)
+    p, (_, _) = aa.find_transform(d1, d2)
     timeL = timeLapsedInMins(url1, url2)
     theta = ra
     Calt = 229*tan(int(theta.strip()))
@@ -125,10 +125,14 @@ def formateAlDrift(url1, url2, ra, starLocation):
 
 def computeAlError(url1, url2, url3, ra, starLocation):
     (timeL, yDrift, adjustment) = computeAlDrift(url1, url2, ra, starLocation)
+    d1 = image2Array(url1,0)
     d3 = image2Array(url3,0)
-    p, (pos_img, pos_img_rot) = aa.find_transform(d1, d3)
-    error = p.translation[1]
-    return error
+    p, (_, _) = aa.find_transform(d1, d3)
+    rotate = p.rotation * 180.0 / np.pi
+    d3 = image2Array(url3, rotate)
+    p, (_, _) = aa.find_transform(d1, d3)
+    error = abs(adjustment) - abs(p.translation[1])
+    return adjustment, error
 
 def formateAlError(url1, url2, url3, ra, starLocation):
     error = computeAlError(url1, url2, url3, ra, starLocation)
@@ -145,12 +149,6 @@ conf = {'/': {
     'tools.staticdir.index': "index.html"
 
 }}
-
-az = None
-base = None
-al = None
-alBase = None
-
 
 class Server(object):
 
@@ -171,7 +169,7 @@ class Server(object):
         return al
 
     @cherrypy.expose
-    def alCheck(self, img1, img2,img3, starLocation, ra):
+    def alCheck(self,root,  img1, img2,img3, starLocation, ra):
         al = formateAlError(root+os.path.sep+img1,
                                root+os.path.sep+img2,
                                root+os.path.sep+img3,
