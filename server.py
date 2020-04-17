@@ -14,6 +14,7 @@ import math
 import datetime
 from scipy.ndimage import rotate
 
+
 debug = True
 
 
@@ -24,8 +25,8 @@ def image2Array(uri, rotAng):
         aBw = rotate(aBw, angle=rotAng, reshape=False)
     imgData = np.asarray(aBw)
     aBin = imgData  # (imgData > THRESHOLD_VALUE) * 1.0
-    if debug is True:
-        print(aBin.shape)
+    # if debug is True:
+        # print(aBin.shape)
     return aBin
 
 
@@ -44,8 +45,7 @@ def timeLapsedInMins(url1, url2):
     return timeDiff
 
 
-def computeRotAng(aData, url2):
-    bData = image2Array(url2, 0)
+def computeRotAng(aData, bData):
     p, (_, _) = aa.find_transform(aData, bData)
     rotate = p.rotation * 180.0 / np.pi
     if debug is True:
@@ -53,17 +53,18 @@ def computeRotAng(aData, url2):
     return rotate
 
 
+const = 0
 def computeAzDrift(img1, img2):
     Caz = 58.3079
-    d1 = image2Array(img1, 90)
-    d2 = image2Array(img2, 90)
+    d1 = image2Array(img1, const)
+    d2 = image2Array(img2, const)
     p, (_, _) = aa.find_transform(d1, d2)
     rotate = p.rotation * 180.0 / np.pi
     d2 = image2Array(img2, rotate)
     p, (pos_img, pos_img_rot) = aa.find_transform(d1, d2)
     timeLapsed = timeLapsedInMins(img1, img2)
-    drift = p.translation[1]
-    adjust = Caz*drift/timeLapsed
+    drift = p.translation[1] * -1 #top left is 00 instead of bot left 
+    adjust = Caz*abs(drift)/timeLapsed
     candidate = sorted(pos_img,
                        key=lambda x: x[0] if drift < 0 else x[1],
                        reverse=True if drift > 0 else False)[0]
@@ -72,7 +73,7 @@ def computeAzDrift(img1, img2):
         for (x1, y1), (x2, y2) in zip(pos_img, pos_img_rot):
             print("S({:.2f}, {:.2f}) --> D({:.2f}, {:.2f}) xDiff: {:.2f}  yDiff: {:.2f}".format(
                 x1, y1, x2, y2,  (x2-x1), (y2-y1)))
-
+    print("rotate:"+ str(rotate)+ "post roation" + str(p.rotation))
     return (timeLapsed, drift, adjust, candidate[0], candidate[1])
 
 
@@ -80,17 +81,34 @@ def formateAzDrift(img1, img2):
     (timeL, drift, adjust, cx, cy) = computeAzDrift(img1, img2)
     str = "duration:{:.2f},drift:{:.2f},move:{:.2f},candidate:{:.2f} * {:.2f}".format(
         timeL, drift, adjust, cx, cy)
+    if debug is True:
+        print("Az drift: "+str)
     return str
 
 
 def computeAzError(img1, img2, img3):
     (_, _, adjust, _, _) = computeAzDrift(img1, img2)
-    d1 = image2Array(img1, 90)
-    d3 = image2Array(img3, 90)
+    d1 = image2Array(img1, const)
+    d2 = image2Array(img2, const)
+    d3 = image2Array(img3, const)
+
+    p, (_, _) = aa.find_transform(d1, d2)
+    
+    d1d2rotate = p.rotation * 180.0 / np.pi
     p, (_, _) = aa.find_transform(d1, d3)
+    d1d3rotate = p.rotation * 180.0 / np.pi
+    
+    p, (pos_img, pos_img_rot) = aa.find_transform(d2, d3)
+    d2d3rotate = p.rotation * 180.0 / np.pi
+
+    print ("ratation 1-2:" + "{:.2f}".format(d1d2rotate))
+    print ("ratation 1-3:" + "{:.2f}".format(d1d3rotate))
+    print ("ratation 2-3:" + "{:.2f}".format(d2d3rotate))
+
+    p, (_, _) = aa.find_transform(d2, d3)
     rotate = p.rotation * 180.0 / np.pi
     d3 = image2Array(img3, rotate)
-    p, (_, _) = aa.find_transform(d1, d3)
+    p, (_, _) = aa.find_transform(d2, d3)
     driftX = p.translation[0]
     return adjust, abs(adjust) - abs(driftX)
 
